@@ -22,6 +22,31 @@ const makeRequest = require("./utils/make-requests");
 
 const makeRequestWithRetries = (attempts) => {
   // TODO: Implement the function to make a request and retry if it fails
+  if (attempts < 1) return console.log("No attempts for making the requestt")
+
+  let currentAttempt = 1;
+  const totalAttempts = attempts
+
+  function trying(attempt) {
+    makeRequest(attempt, (error, data) => {
+
+      if (error) {
+        
+        currentAttempt++;
+        if (currentAttempt > totalAttempts) {
+          console.log("All atempts failed")
+           
+        } else {
+          trying(currentAttempt)
+        }
+      } else {
+        console.log(data);
+        return
+      }
+    });
+  }
+
+  trying(currentAttempt)
 };
 
 makeRequestWithRetries(10);
