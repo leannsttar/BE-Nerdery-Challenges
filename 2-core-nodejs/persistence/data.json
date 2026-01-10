@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "name": "Mouse",
+    "price": 99.99,
+    "store": "Amazon"
+  },
+  {
+    "id": 2,
+    "name": "Mechanical Keyboard",
+    "price": 75,
+    "store": "Dragonlore"
+  },
+  {
+    "id": 3,
+    "name": "Monitor",
+    "price": 320.5,
+    "store": "Zona digital"
+  },
+  {
+    "id": 4,
+    "name": "Coffee Maker",
+    "price": 40,
+    "store": "Fabios' Shop"
+  },
+  {
+    "id": 5,
+    "name": "smartwatch",
+    "price": 45.99,
+    "store": "Apple"
+  },
+  {
+    "id": 6,
+    "name": "Piano Yamaha",
+    "price": 35,
+    "store": "Yamaha"
+  },
+  {
+    "id": 7,
+    "name": "White Nights",
+    "price": 139,
+    "store": "Amazon"
+  },
+  {
+    "id": 8,
+    "name": "Test",
+    "price": 280,
+    "store": "Test"
+  },
+  {
+    "id": 9,
+    "name": "Switch 2",
+    "price": 348,
+    "store": "Nintendo"
+  },
+  {
+    "id": 10,
+    "name": "Yoga Mat",
+    "price": 120,
+    "store": "Ni idea"
+  },
+  {
+    "id": 11,
+    "name": "Coca Cola",
+    "price": 0.85,
+    "store": "La constancia"
+  },
+  {
+    "id": 12,
+    "name": "LesPaul",
+    "price": 980,
+    "store": "Gibson"
+  }
+]
