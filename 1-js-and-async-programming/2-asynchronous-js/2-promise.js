@@ -13,7 +13,11 @@
  */
 
 //I added getUsers() here, cuz i need to get the users data
-const { getLikedMovies, getDislikedMovies, getUsers } = require("./utils/mocked-api");
+const {
+  getLikedMovies,
+  getDislikedMovies,
+  getUsers,
+} = require("./utils/mocked-api");
 
 /**
  * @typedef {Object} User
@@ -28,46 +32,51 @@ const { getLikedMovies, getDislikedMovies, getUsers } = require("./utils/mocked-
  * @returns {Promise<User[]>} A promise that resolves to an array of users who dislike more movies than they like.
  */
 const getUsersWithMoreDislikedMoviesThanLikedMovies = () => {
-
   let usersWhoDislikeMore = [];
   // Add your code here
-  const usersPromise = getUsers()
-  const likedMoviesPromise = getLikedMovies()
-  const dislikedMoviesPromise = getDislikedMovies()
+  const usersPromise = getUsers();
+  const likedMoviesPromise = getLikedMovies();
+  const dislikedMoviesPromise = getDislikedMovies();
 
-  const allPromises = Promise.all([usersPromise, likedMoviesPromise, dislikedMoviesPromise])
+  const allPromises = Promise.all([
+    usersPromise,
+    likedMoviesPromise,
+    dislikedMoviesPromise,
+  ]);
 
-  return allPromises.then(values => {
-    const users = values[0]
-    const likedMovies = values[1]
-    const dislikedMovies = values[2]
+  return allPromises
+    .then((values) => {
+      const users = values[0];
+      const likedMovies = values[1];
+      const dislikedMovies = values[2];
 
-    users.forEach((user) => {
-      const likedFromThisUser = likedMovies.filter((item) => item.userId === user.id)
-      const dislikedFromThisUser = dislikedMovies.filter((item) => item.userId === user.id)
+      users.forEach((user) => {
+        const userLiked = likedMovies.find((item) => item.userId === user.id);
+        const userDisliked = dislikedMovies.find((item) => item.userId === user.id,);
 
-      if (dislikedFromThisUser[0].movies.length > likedFromThisUser[0].movies.length) {
-        usersWhoDislikeMore.push(user)
-      }
+        const likedCount = userLiked ? userLiked.movies.length : 0;
+        const dislikedCount = userDisliked ? userDisliked.movies.length : 0;
+
+        if (dislikedCount > likedCount) {
+          usersWhoDislikeMore.push(user);
+        }
+      });
+
+      return usersWhoDislikeMore;
     })
-
-    return usersWhoDislikeMore
-
-  }).catch(error => {
-    console.log(error)
-  })
+    .catch((error) => {
+      console.log(error);
+    });
 };
-
 
 //added user.age instead of age
 getUsersWithMoreDislikedMoviesThanLikedMovies().then((users) => {
   console.log("Users with more disliked movies than liked movies:");
   users.forEach((user) => {
-    console.log(user.name, user.age);
+    console.log(`${user.name} - ${user.age} años`);
   });
 });
 
-
 module.exports = {
-  getUsersWithMoreDislikedMoviesThanLikedMovies
-}
+  getUsersWithMoreDislikedMoviesThanLikedMovies,
+};

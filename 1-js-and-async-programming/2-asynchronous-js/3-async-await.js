@@ -11,7 +11,12 @@
     - Make sure to return a string containing the name of the most common subscription
 */
 
-const { getUserSubscriptionByUserId, getLikedMovies, getDislikedMovies, getUsers } = require("./utils/mocked-api");
+const {
+  getUserSubscriptionByUserId,
+  getLikedMovies,
+  getDislikedMovies,
+  getUsers,
+} = require("./utils/mocked-api");
 
 /**
  * Logs the most common subscription among users
@@ -20,41 +25,42 @@ const { getUserSubscriptionByUserId, getLikedMovies, getDislikedMovies, getUsers
  * @returns {Promise<string>} Logs the subscription name as a string.
  */
 const getCommonDislikedSubscription = async () => {
-
   //object for storing the amount of each subscription
-    let subscriptionsCounter = {}
+  let subscriptionsCounter = {};
 
-    const usersPromise = getUsers()
-    const likedMoviesPromise = getLikedMovies()
-    const dislikedMoviesPromise = getDislikedMovies()
+  const [users, likedMovies, dislikedMovies] = await Promise.all([
+    getUsers(),
+    getLikedMovies(),
+    getDislikedMovies(),
+  ]);
 
-    const [users, likedMovies, dislikedMovies] = await Promise.all([usersPromise, likedMoviesPromise, dislikedMoviesPromise])
+  for (const user of users) {
+    const userLikedData = likedMovies.find((item) => item.userId === user.id);
+    const userDislikedData = dislikedMovies.find((item) => item.userId === user.id,);
 
-    for (const user of users) {
-      const likedFromThisUser = likedMovies.filter((item) => item.userId === user.id)
-      const dislikedFromThisUser = dislikedMovies.filter((item) => item.userId === user.id)
+    const likedCount = userLikedData ? userLikedData.movies.length : 0;
+    const dislikedCount = userDislikedData ? userDislikedData.movies.length : 0;
 
-      if (dislikedFromThisUser[0].movies.length > likedFromThisUser[0].movies.length) {
+    if (dislikedCount > likedCount) {
+      const dataSubscription = await getUserSubscriptionByUserId(user.id);
+      const subName = dataSubscription.subscription;
 
-        const dataSubscription = await getUserSubscriptionByUserId(user.id)
-        //storing the times the subscription appears
-        subscriptionsCounter[dataSubscription.subscription] = (subscriptionsCounter[dataSubscription.subscription] || 0) + 1
-      }
-    } 
-
-    let mostCommon;
-    let highestNumber = 0;
-
-    //Finding the most common
-    for (const subscription in subscriptionsCounter) {
-      if (subscriptionsCounter[subscription] > highestNumber) {
-        highestNumber = subscriptionsCounter[subscription]
-        mostCommon = subscription
-      }
+      subscriptionsCounter[subName] = (subscriptionsCounter[subName] || 0) + 1;
     }
+  }
 
-    return mostCommon
-  
+  let mostCommon;
+  let highestNumber = 0;
+
+  //Finding the most common
+  for (const subscription in subscriptionsCounter) {
+    if (subscriptionsCounter[subscription] > highestNumber) {
+      highestNumber = subscriptionsCounter[subscription];
+      mostCommon = subscription;
+    }
+  }
+
+  return mostCommon;
 };
 
 getCommonDislikedSubscription().then((subscription) => {
