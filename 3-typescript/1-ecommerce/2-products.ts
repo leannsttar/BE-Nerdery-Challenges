@@ -1,3 +1,12 @@
+import path = require("path");
+import { readJsonFile } from "./utils/read-json.util";
+import { Product, Brand } from "./1-types";
+
+//Function for fetching data
+async function fetchData<T>(fileName: string): Promise<T[]> {
+  const data = await readJsonFile(path.join(__dirname, "data", fileName));
+  return data as T[];
+}
 /**
  * Products - Challenge 1: Product Price Analysis
  *
@@ -19,7 +28,68 @@
  *
  **/
 
-async function analyzeProductPrices(products: any[]): Promise<any> {}
+interface ProductAnalysis {
+  totalPrice: number;
+  averagePrice: number;
+  mostExpensiveProduct: Product;
+  cheapestProduct: Product;
+  onSaleCount: number;
+  averageDiscount: string;
+}
+
+async function analyzeProductPrices(
+  products: Product[],
+): Promise<ProductAnalysis> {
+  let totalPrice = 0;
+  let mostExpensiveProduct = products[0];
+  let cheapestProduct = products[0];
+  let onSaleCount = 0;
+  let totalDiscount = 0;
+  let productsWithDiscountPrice = 0;
+
+  products.forEach((product) => {
+    totalPrice += product.price;
+
+    mostExpensiveProduct =
+      mostExpensiveProduct.price > product.price
+        ? mostExpensiveProduct
+        : product;
+
+    cheapestProduct =
+      cheapestProduct.price < product.price ? cheapestProduct : product;
+
+    if (product.onSale) {
+      onSaleCount++;
+    }
+
+    if (product.salePrice && product.salePrice < product.price) {
+      const discount =
+        ((product.price - product.salePrice) / product.price) * 100;
+
+      totalDiscount += discount;
+      productsWithDiscountPrice++;
+    }
+  });
+
+  return {
+    totalPrice,
+    averagePrice: Number((totalPrice / products.length).toFixed(2)),
+    mostExpensiveProduct,
+    cheapestProduct,
+    onSaleCount,
+    averageDiscount:
+      (totalDiscount / productsWithDiscountPrice).toFixed(2) + "%",
+  };
+}
+
+async function runChallenge1() {
+  const products: Product[] = await fetchData<Product>("products.json");
+  const result: ProductAnalysis = await analyzeProductPrices(products);
+
+  console.log(result);
+}
+//RUN THIS IF U WANNA CHECK THE RESULT
+//runChallenge1().catch(console.error);
 
 /**
  *  Challenge 2: Build a Product Catalog with Brand Metadata
@@ -35,12 +105,47 @@ async function analyzeProductPrices(products: any[]): Promise<any> {}
   - The brandInfo field should include the rest of the brand metadata (name, logo, description, etc.).
  */
 
-async function buildProductCatalog(
-  products: unknown[],
-  brands: unknown[],
-): Promise<unknown[]> {
-  return [];
+type BrandForEnrichedProduct = Omit<Brand, "id" | "isActive">;
+
+interface EnrichedProduct extends Product {
+  brand: BrandForEnrichedProduct;
 }
+
+async function buildProductCatalog(
+  products: Product[],
+  brands: Brand[],
+): Promise<EnrichedProduct[]> {
+  const brandsObject: { [key: string | number]: Brand } = {};
+
+  for (const brand of brands) {
+    if (brand.isActive) {
+      brandsObject[brand.id] = brand;
+    }
+  }
+
+  const enriched: EnrichedProduct[] = [];
+
+  for (const product of products) {
+    if (brandsObject[product.brandId]) {
+      const { id, isActive, ...remainingProperties } =
+        brandsObject[product.brandId];
+
+      enriched.push({ ...product, brand: remainingProperties });
+    }
+  }
+
+  return enriched;
+}
+
+async function runChallenge2() {
+  const products: Product[] = await fetchData<Product>("products.json");
+  const brands: Brand[] = await fetchData<Brand>("brands.json");
+  const result = await buildProductCatalog(products, brands);
+
+  console.log(result);
+}
+
+//runChallenge2().catch(console.error);
 
 /**
  * Challenge 3: One image per product
@@ -57,9 +162,27 @@ async function buildProductCatalog(
  */
 
 async function filterProductsWithOneImage(
-  products: unknown[],
-): Promise<unknown[]> {
+  products: Product[],
+): Promise<Product[]> {
   // Implement the function logic here
 
-  return [];
+  const result: Product[] = [];
+
+  products.forEach((product) => {
+    if (product.images && product.images.length >= 1) {
+      product.images = [product.images[0]];
+      result.push(product);
+    }
+  });
+
+  return result;
 }
+
+async function runChallenge3() {
+  const products: Product[] = await fetchData<Product>("products.json");
+  const result = await filterProductsWithOneImage(products);
+
+  console.log(JSON.stringify(result, null, 2));
+}
+
+runChallenge3().catch(console.error);
