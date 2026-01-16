@@ -11,10 +11,52 @@
  * - Add the name of the products in an array called productsNames inside the department object.
  */
 
-async function getDepartmentsWithProductCount(
-  departments: unknown[],
-  products: unknown[],
-): Promise<unknown[]> {
-  // Implement the function logic here
-  return [];
+import { Product, Department } from "./1-types";
+import { fetchData } from "./utils/fetchData.util";
+
+interface DepartmentAndProductsResult extends Pick<Department, 'id' | 'name'> {
+  productsAvailable: number;
+  productNames: string[];
 }
+
+async function getDepartmentsWithProductCount(
+  departments: Department[],
+  products: Product[],
+): Promise<DepartmentAndProductsResult[]> {
+
+  const departmentWithProducts = new Map<number, string[]>()
+
+  for (const product of products) {
+    const productsByDepartment = departmentWithProducts.get(product.departmentId)
+    if (productsByDepartment) {
+      productsByDepartment.push(product.name)
+      departmentWithProducts.set(product.departmentId, productsByDepartment)
+    } else {
+      departmentWithProducts.set(product.departmentId, [product.name])
+    }
+  }
+
+  const result: DepartmentAndProductsResult[] = departments.map((department) => {
+    const dataForCurrentDepartment = departmentWithProducts.get(department.id) ?? []
+    
+      return {
+        id: department.id,
+        name: department.name,
+        productsAvailable: dataForCurrentDepartment.length,
+        productNames: dataForCurrentDepartment
+      }
+     
+  })
+
+  return result
+}
+
+async function runChallenge() {
+  const products: Product[] = await fetchData<Product>("products.json");
+  const departments: Department[] = await fetchData<Department>("departments.json");
+  const result = await getDepartmentsWithProductCount(departments, products);
+
+  console.log(result);
+}
+
+runChallenge().catch(console.error);

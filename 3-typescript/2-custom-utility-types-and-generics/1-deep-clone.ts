@@ -12,3 +12,52 @@
  */
 
 //? implement the function  here
+
+function deepClone<T>(objectToClone: T): any {
+
+
+    
+}
+
+const object = {
+  id: 123,
+  nombre: "Ana Pérez",
+  activo: true,
+  edad: null,
+  apodo: undefined,
+
+  direccion: {
+    calle: "Av. Central",
+    numero: 45,
+    ciudad: "Madrid",
+    coordenadas: {
+      lat: 40.4168,
+      lng: -3.7038,
+    },
+  },
+
+  hobbies: [
+    "leer",
+    "correr",
+    {
+      nombre: "programar",
+      nivel: "avanzado",
+      horasPorSemana: 10,
+    },
+  ],
+
+  historialCompras: [
+    {
+      producto: "Laptop",
+      precio: 1200.99,
+      entregado: true,
+    },
+    {
+      producto: "Mouse",
+      precio: 25.5,
+      entregado: false,
+    },
+  ],
+};
+
+console.log(deepClone(object));

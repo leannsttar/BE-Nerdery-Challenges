@@ -125,7 +125,7 @@ type ID = string | number
 
 // DEPARTMENTS JSON
 //! Add necessary type definitions for the departments json file
-interface Department {
+export interface Department {
     id: number,
     name: string,
     description: string,

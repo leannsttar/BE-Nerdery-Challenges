@@ -1,12 +1,6 @@
-import path = require("path");
-import { readJsonFile } from "./utils/read-json.util";
+import { fetchData } from "./utils/fetchData.util";
 import { Product, Brand } from "./1-types";
 
-//Function for fetching data
-async function fetchData<T>(fileName: string): Promise<T[]> {
-  const data = await readJsonFile(path.join(__dirname, "data", fileName));
-  return data as T[];
-}
 /**
  * Products - Challenge 1: Product Price Analysis
  *
@@ -86,10 +80,11 @@ async function runChallenge1() {
   const products: Product[] = await fetchData<Product>("products.json");
   const result: ProductAnalysis = await analyzeProductPrices(products);
 
-  console.log(result);
+  console.dir(result, { depth: null });
+
 }
 //RUN THIS IF U WANNA CHECK THE RESULT
-//runChallenge1().catch(console.error);
+// runChallenge1().catch(console.error);
 
 /**
  *  Challenge 2: Build a Product Catalog with Brand Metadata
@@ -115,22 +110,21 @@ async function buildProductCatalog(
   products: Product[],
   brands: Brand[],
 ): Promise<EnrichedProduct[]> {
-  const brandsObject: { [key: string | number]: Brand } = {};
+  const activeBrands = new Map<string | number, Brand>();
 
   for (const brand of brands) {
     if (brand.isActive) {
-      brandsObject[brand.id] = brand;
+      activeBrands.set(brand.id, brand);
     }
   }
 
   const enriched: EnrichedProduct[] = [];
 
   for (const product of products) {
-    if (brandsObject[product.brandId]) {
-      const { id, isActive, ...remainingProperties } =
-        brandsObject[product.brandId];
-
-      enriched.push({ ...product, brand: remainingProperties });
+    const brand = activeBrands.get(product.brandId);
+    if (brand) {
+      const { id, isActive, ...remainingData } = brand;
+      enriched.push({ ...product, brand: remainingData });
     }
   }
 
@@ -142,7 +136,7 @@ async function runChallenge2() {
   const brands: Brand[] = await fetchData<Brand>("brands.json");
   const result = await buildProductCatalog(products, brands);
 
-  console.log(result);
+  console.dir(result, { depth: null });
 }
 
 //runChallenge2().catch(console.error);
@@ -166,23 +160,23 @@ async function filterProductsWithOneImage(
 ): Promise<Product[]> {
   // Implement the function logic here
 
-  const result: Product[] = [];
+  const productsWithOneImage: Product[] = [];
 
   products.forEach((product) => {
     if (product.images && product.images.length >= 1) {
       product.images = [product.images[0]];
-      result.push(product);
+      productsWithOneImage.push(product);
     }
   });
 
-  return result;
+  return productsWithOneImage;
 }
 
 async function runChallenge3() {
   const products: Product[] = await fetchData<Product>("products.json");
   const result = await filterProductsWithOneImage(products);
 
-  console.log(JSON.stringify(result, null, 2));
+  console.dir(result, { depth: null });
 }
 
 runChallenge3().catch(console.error);
