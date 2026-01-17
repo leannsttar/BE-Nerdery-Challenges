@@ -177,7 +177,7 @@ type Result = MyAwaited<ExampleType>;
  * expected to be: { name: string; age?: number; address?: string }
  */
 
-// This was my first solution but I realized that I was doing Required<Pick>> manually, so I changed it in the next section
+// This was my first solution but I realized that I was doing Required<Pick>> manually, so I changed it in the next solution
 // type MyRequiredByKeys<T, K extends keyof T> = {
 //     [P in K]-?: T[P]
 // } & Omit<T, K>

@@ -12,52 +12,31 @@
  */
 
 //? implement the function  here
+import { complexObject } from './data/mock-data';
 
-function deepClone<T>(objectToClone: T): any {
+function deepClone<T>(input: T): T {
 
+    //since here we are catching primitive values, it wont trigger in the first run
+    if (typeof input !== 'object' || input === null || input === undefined) {
+        return input
+    }
 
+    const output = (Array.isArray(input) ? [] : {}) as T
+
+    for (const key in input) {
+        output[key] = deepClone(input[key])
+    }   
     
+    return output
 }
 
-const object = {
-  id: 123,
-  nombre: "Ana Pérez",
-  activo: true,
-  edad: null,
-  apodo: undefined,
+const clonedObject = deepClone(complexObject);
 
-  direccion: {
-    calle: "Av. Central",
-    numero: 45,
-    ciudad: "Madrid",
-    coordenadas: {
-      lat: 40.4168,
-      lng: -3.7038,
-    },
-  },
+//Testing changing the property address.coordinates.lat (It's originally: 40.4168)
+clonedObject.address.coordinates.lat = 0;
 
-  hobbies: [
-    "leer",
-    "correr",
-    {
-      nombre: "programar",
-      nivel: "avanzado",
-      horasPorSemana: 10,
-    },
-  ],
+console.log("Original Lat:", complexObject.address.coordinates.lat);
+console.log("Cloned Lat:", clonedObject.address.coordinates.lat);
 
-  historialCompras: [
-    {
-      producto: "Laptop",
-      precio: 1200.99,
-      entregado: true,
-    },
-    {
-      producto: "Mouse",
-      precio: 25.5,
-      entregado: false,
-    },
-  ],
-};
-
-console.log(deepClone(object));
+//If you want to see the cloned object uncomment this console.dir()
+// console.dir(clonedObject, { depth: null });

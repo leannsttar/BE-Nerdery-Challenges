@@ -1,4 +1,4 @@
-import { fetchData } from "./utils/fetchData.util";
+import { fetchData } from "./utils/fetch-data";
 import { Product, Brand } from "./1-types";
 
 /**
@@ -28,51 +28,56 @@ interface ProductAnalysis {
   mostExpensiveProduct: Product;
   cheapestProduct: Product;
   onSaleCount: number;
-  averageDiscount: string;
+  averageDiscount: number;
 }
 
 async function analyzeProductPrices(
   products: Product[],
 ): Promise<ProductAnalysis> {
-  let totalPrice = 0;
-  let mostExpensiveProduct = products[0];
-  let cheapestProduct = products[0];
-  let onSaleCount = 0;
-  let totalDiscount = 0;
-  let productsWithDiscountPrice = 0;
+  const data = products.reduce(
+    (acc, product) => {
+      acc.totalPrice += product.price;
 
-  products.forEach((product) => {
-    totalPrice += product.price;
+      if (product.price > acc.mostExpensiveProduct.price) {
+        acc.mostExpensiveProduct = product;
+      }
 
-    mostExpensiveProduct =
-      mostExpensiveProduct.price > product.price
-        ? mostExpensiveProduct
-        : product;
+      if (product.price < acc.cheapestProduct.price) {
+        acc.cheapestProduct = product;
+      }
 
-    cheapestProduct =
-      cheapestProduct.price < product.price ? cheapestProduct : product;
+      if (product.onSale) {
+        acc.onSaleCount++;
+      }
 
-    if (product.onSale) {
-      onSaleCount++;
-    }
+      if (product.salePrice && product.salePrice < product.price) {
+        const discount = ((product.price - product.salePrice) / product.price) * 100;
 
-    if (product.salePrice && product.salePrice < product.price) {
-      const discount =
-        ((product.price - product.salePrice) / product.price) * 100;
+        acc.totalDiscount += discount;
+        acc.productsWithDiscountPrice++;
+      }
 
-      totalDiscount += discount;
-      productsWithDiscountPrice++;
-    }
-  });
+      return acc;
+    },
+    {
+      totalPrice: 0,
+      mostExpensiveProduct: products[0],
+      cheapestProduct: products[0],
+      onSaleCount: 0,
+      totalDiscount: 0,
+      productsWithDiscountPrice: 0,
+    },
+  );
 
   return {
-    totalPrice,
-    averagePrice: Number((totalPrice / products.length).toFixed(2)),
-    mostExpensiveProduct,
-    cheapestProduct,
-    onSaleCount,
-    averageDiscount:
-      (totalDiscount / productsWithDiscountPrice).toFixed(2) + "%",
+    totalPrice: data.totalPrice,
+    averagePrice: Number((data.totalPrice / products.length).toFixed(2)),
+    mostExpensiveProduct: data.mostExpensiveProduct,
+    cheapestProduct: data.cheapestProduct,
+    onSaleCount: data.onSaleCount,
+    averageDiscount: Number(
+      (data.totalDiscount / data.productsWithDiscountPrice).toFixed(2),
+    ),
   };
 }
 
@@ -80,11 +85,17 @@ async function runChallenge1() {
   const products: Product[] = await fetchData<Product>("products.json");
   const result: ProductAnalysis = await analyzeProductPrices(products);
 
-  console.dir(result, { depth: null });
-
+  console.log("Analysis Result:");
+  console.dir(
+    {
+      ...result,
+      averageDiscount: `${result.averageDiscount}%`,
+    },
+    { depth: null },
+  );
 }
 //RUN THIS IF U WANNA CHECK THE RESULT
-// runChallenge1().catch(console.error);
+//runChallenge1().catch(console.error);
 
 /**
  *  Challenge 2: Build a Product Catalog with Brand Metadata
@@ -100,10 +111,10 @@ async function runChallenge1() {
   - The brandInfo field should include the rest of the brand metadata (name, logo, description, etc.).
  */
 
-type BrandForEnrichedProduct = Omit<Brand, "id" | "isActive">;
+type BrandInfo = Omit<Brand, "id" | "isActive">;
 
 interface EnrichedProduct extends Product {
-  brand: BrandForEnrichedProduct;
+  brandInfo: BrandInfo;
 }
 
 async function buildProductCatalog(
@@ -122,9 +133,9 @@ async function buildProductCatalog(
 
   for (const product of products) {
     const brand = activeBrands.get(product.brandId);
-    if (brand) {
+    if (brand && product.isActive) {
       const { id, isActive, ...remainingData } = brand;
-      enriched.push({ ...product, brand: remainingData });
+      enriched.push({ ...product, brandInfo: remainingData });
     }
   }
 
@@ -134,7 +145,7 @@ async function buildProductCatalog(
 async function runChallenge2() {
   const products: Product[] = await fetchData<Product>("products.json");
   const brands: Brand[] = await fetchData<Brand>("brands.json");
-  const result = await buildProductCatalog(products, brands);
+  const result: EnrichedProduct[] = await buildProductCatalog(products, brands);
 
   console.dir(result, { depth: null });
 }
@@ -160,21 +171,21 @@ async function filterProductsWithOneImage(
 ): Promise<Product[]> {
   // Implement the function logic here
 
-  const productsWithOneImage: Product[] = [];
+  const result: Product[] = [];
 
-  products.forEach((product) => {
+  for (const product of products) {
     if (product.images && product.images.length >= 1) {
-      product.images = [product.images[0]];
-      productsWithOneImage.push(product);
+      const productCopy = { ...product, images: [product.images[0]] };
+      result.push(productCopy);
     }
-  });
+  };
 
-  return productsWithOneImage;
+  return result;
 }
 
 async function runChallenge3() {
   const products: Product[] = await fetchData<Product>("products.json");
-  const result = await filterProductsWithOneImage(products);
+  const result: Product[] = await filterProductsWithOneImage(products);
 
   console.dir(result, { depth: null });
 }

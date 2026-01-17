@@ -16,124 +16,117 @@
  * - The use of interfaces and type aliases to create a clear and maintainable structure
  */
 
-// PRODUCTS JSON
+//UTILITY TYPES
+type Nullable<T> = T | null;
 
-//! Add necessary type definitions for the products json file
-export interface ProductImage  {
-    id: number,
-    url: string,
-    alt: string,
-    isMain: boolean
+// PRODUCTS TYPES
+interface ProductImage {
+  id: number;
+  url: string;
+  alt: string;
+  isMain: boolean;
 }
 
 interface ProductSpecification {
-    material: string,
-    weight: string,
-    closure: string,
-    cushioning?: string,
-    archSupport?: string,
-    shaftHeight?: string,
-    ankleSupport?: string,
-    heelDrop?: string,
-    heelHeight?: string,
-    insulation?: string,
-    waterproofing?: string,
-    flexibility?: string,
-    lining?: string
-
+  material: string;
+  weight: string;
+  closure: string;
+  cushioning?: string;
+  archSupport?: string;
+  shaftHeight?: string;
+  ankleSupport?: string;
+  heelDrop?: string;
+  heelHeight?: string;
+  insulation?: string;
+  waterproofing?: string;
+  flexibility?: string;
+  lining?: string;
 }
-
-type SalePrice = number | null
 
 export interface Product {
-    id: number,
-    name: string,
-    departmentId: number,
-    categoryId: number,
-    brandId: number,
-    linkId: string,
-    refId: string,
-    isVisible: boolean,
-    description: string,
-    descriptionShort: string, 
-    releaseDate: string,
-    keywords: string,
-    title: string, 
-    isActive: boolean,
-    taxCode: string,
-    metaTagDescription: string,
-    supplierId: number,
-    showWithoutStock: boolean,
-    adWordsRemarketingCode?: string,
-    lomadeeCampaignCode?: string,
-    score: number,
-    price: number,
-    salePrice: SalePrice,
-    onSale: boolean,
-    colors: string[],
-    sizes: number[],
-    tags: string[],
-    images: ProductImage[],
-    specifications: ProductSpecification
+  id: number;
+  name: string;
+  departmentId: number;
+  categoryId: number;
+  brandId: number;
+  linkId: string;
+  refId: string;
+  isVisible: boolean;
+  description: string;
+  descriptionShort: string;
+  releaseDate: string;
+  keywords: string;
+  title: string;
+  isActive: boolean;
+  taxCode: string;
+  metaTagDescription: string;
+  supplierId: number;
+  showWithoutStock: boolean;
+  adWordsRemarketingCode?: string;
+  lomadeeCampaignCode?: string;
+  score: number;
+  price: number;
+  salePrice: Nullable<number>;
+  onSale: boolean;
+  colors: string[];
+  sizes: number[];
+  tags: string[];
+  images: ProductImage[];
+  specifications: ProductSpecification;
 }
 
-// CATEGORIES JSON
-
-//! Add necessary type definitions for the brands json file
-interface Category {
-    id: number,
-    name: string,
-    departmentId: number,
-    description: string,
-    keywords: string,
-    isActive: boolean,
-    iconUrl: string,
-    bannerUrl: string,
-    displayOrder: number,
-    metaDescription: string,
-    filter: CategoryFilters[]
-}
-
+// CATEGORIES TYPES
 interface CategoryFilters {
-    name: string,
-    values: string[]
+  name: string;
+  values: string[];
 }
 
-// BRANDS JSON
-
-//! Add necessary type definitions for the brands json file
-export interface Brand {
-    id: ID,
-    name: string,
-    logo: string,
-    description: string,
-    foundedYear: number,
-    website: string,
-    isActive: boolean,
-    headquarters: string,
-    signature: string,
-    socialMedia: BrandSocialMedia
+interface Category {
+  id: number;
+  name: string;
+  departmentId: number;
+  description: string;
+  keywords: string;
+  isActive: boolean;
+  iconUrl: string;
+  bannerUrl: string;
+  displayOrder: number;
+  metaDescription: string;
+  filter: CategoryFilters[];
 }
 
+// BRANDS TYPES
 interface BrandSocialMedia {
-    instagram: string,
-    twitter: string,
-    facebook: string
+  instagram: string;
+  twitter: string;
+  facebook: string;
 }
 
-type ID = string | number
+export interface Brand {
+  // union type used here as requirement from brands.json
+  id: string | number;
+  name: string;
+  logo: string;
+  description: string;
+  foundedYear: number;
+  website: string;
+  isActive: boolean;
+  headquarters: string;
+  signature: string;
+  socialMedia: BrandSocialMedia;
+}
 
-// DEPARTMENTS JSON
-//! Add necessary type definitions for the departments json file
+
+// DEPARTMENTS TYPES
 export interface Department {
-    id: number,
-    name: string,
-    description: string,
-    isActive: boolean,
-    displayOrder: number,
-    iconUrl: string,
-    bannerUrl: string,
-    metaDescription: string,
-    featuredCategories: number[],
-    slug: string
+  id: number;
+  name: string;
+  description: string;
+  isActive: boolean;
+  displayOrder: number;
+  iconUrl: string;
+  bannerUrl: string;
+  metaDescription: string;
+  featuredCategories: number[];
+  slug: string;
 }

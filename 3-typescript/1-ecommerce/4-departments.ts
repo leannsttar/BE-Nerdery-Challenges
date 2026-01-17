@@ -12,11 +12,11 @@
  */
 
 import { Product, Department } from "./1-types";
-import { fetchData } from "./utils/fetchData.util";
+import { fetchData } from "./utils/fetch-data";
 
 interface DepartmentAndProductsResult extends Pick<Department, 'id' | 'name'> {
   productsAvailable: number;
-  productNames: string[];
+  productsNames: string[];
 }
 
 async function getDepartmentsWithProductCount(
@@ -27,13 +27,10 @@ async function getDepartmentsWithProductCount(
   const departmentWithProducts = new Map<number, string[]>()
 
   for (const product of products) {
-    const productsByDepartment = departmentWithProducts.get(product.departmentId)
-    if (productsByDepartment) {
-      productsByDepartment.push(product.name)
-      departmentWithProducts.set(product.departmentId, productsByDepartment)
-    } else {
-      departmentWithProducts.set(product.departmentId, [product.name])
-    }
+    const names = departmentWithProducts.get(product.departmentId) || []
+    names.push(product.name);
+  
+    departmentWithProducts.set(product.departmentId, names);
   }
 
   const result: DepartmentAndProductsResult[] = departments.map((department) => {
@@ -43,7 +40,7 @@ async function getDepartmentsWithProductCount(
         id: department.id,
         name: department.name,
         productsAvailable: dataForCurrentDepartment.length,
-        productNames: dataForCurrentDepartment
+        productsNames: dataForCurrentDepartment
       }
      
   })

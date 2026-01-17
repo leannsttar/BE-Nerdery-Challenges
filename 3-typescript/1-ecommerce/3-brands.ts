@@ -13,24 +13,22 @@
  */
 
 import { Product, Brand } from "./1-types";
-import { fetchData } from "./utils/fetchData.util";
+import { fetchData } from "./utils/fetch-data";
 
-type CountryProductsResult = {
-  country: string;
-  productsAvailable: number;
-};
+type CountryProductsResult = Record<string, number>;
 
 async function getCountriesWithBrandsAndProductCount(
   brands: Brand[],
   products: Product[],
-): Promise<CountryProductsResult[]> {
+): Promise<CountryProductsResult> {
   const brandsWithCountry = new Map<string | number, string>();
   const countryWithProducts = new Map<string, number>();
 
   for (const brand of brands) {
     const partsOfLocation = brand.headquarters.split(",");
-    const country = partsOfLocation[1].trim();
-    if (country) {
+    
+    if (partsOfLocation.length >= 2) {
+      const country = partsOfLocation[1].trim();
       brandsWithCountry.set(brand.id, country);
 
       if (!countryWithProducts.has(country)) {
@@ -49,12 +47,7 @@ async function getCountriesWithBrandsAndProductCount(
     }
   }
 
-  return [...countryWithProducts].map(([country, productsAvailable]) => (
-    {
-      country,
-      productsAvailable
-    }
-  ));
+  return Object.fromEntries(countryWithProducts);
 }
 
 async function runChallenge() {
