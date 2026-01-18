@@ -25,42 +25,49 @@ const {
  * @returns {Promise<string>} Logs the subscription name as a string.
  */
 const getCommonDislikedSubscription = async () => {
-  //object for storing the amount of each subscription
-  let subscriptionsCounter = {};
+  const subscriptionsCounter = new Map();
 
-  const [users, likedMovies, dislikedMovies] = await Promise.all([
-    getUsers(),
-    getLikedMovies(),
-    getDislikedMovies(),
-  ]);
+  try {
+    const [users, likedMovies, dislikedMovies] = await Promise.all([
+      getUsers(),
+      getLikedMovies(),
+      getDislikedMovies(),
+    ]);
 
-  for (const user of users) {
-    const userLikedData = likedMovies.find((item) => item.userId === user.id);
-    const userDislikedData = dislikedMovies.find((item) => item.userId === user.id,);
+    const harshReviewers = users.filter((user) => {
+      const userLikedData = likedMovies.find((item) => item.userId === user.id);
+      const userDislikedData = dislikedMovies.find((item) => item.userId === user.id);
 
-    const likedCount = userLikedData ? userLikedData.movies.length : 0;
-    const dislikedCount = userDislikedData ? userDislikedData.movies.length : 0;
+      const likedCount = userLikedData ? userLikedData.movies.length : 0;
+      const dislikedCount = userDislikedData ? userDislikedData.movies.length : 0;
 
-    if (dislikedCount > likedCount) {
-      const dataSubscription = await getUserSubscriptionByUserId(user.id);
-      const subName = dataSubscription.subscription;
+      return dislikedCount > likedCount;
+    });
 
-      subscriptionsCounter[subName] = (subscriptionsCounter[subName] || 0) + 1;
+    const subscriptionDataArray = await Promise.all(
+      harshReviewers.map((user) => getUserSubscriptionByUserId(user.id))
+    );
+
+    subscriptionDataArray.forEach((data) => {
+      const subName = data.subscription;
+      subscriptionsCounter.set(subName, (subscriptionsCounter.get(subName) || 0) + 1);
+    });
+
+    let mostCommon;
+    let highestNumber = 0;
+
+    for (const [subscription, count] of subscriptionsCounter) {
+      if (count > highestNumber) {
+        highestNumber = count;
+        mostCommon = subscription;
+      }
     }
+
+    return mostCommon;
+  } catch (error) {
+    console.error(error);
+    throw error;
   }
-
-  let mostCommon;
-  let highestNumber = 0;
-
-  //Finding the most common
-  for (const subscription in subscriptionsCounter) {
-    if (subscriptionsCounter[subscription] > highestNumber) {
-      highestNumber = subscriptionsCounter[subscription];
-      mostCommon = subscription;
-    }
-  }
-
-  return mostCommon;
 };
 
 getCommonDislikedSubscription().then((subscription) => {

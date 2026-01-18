@@ -32,40 +32,25 @@ const {
  * @returns {Promise<User[]>} A promise that resolves to an array of users who dislike more movies than they like.
  */
 const getUsersWithMoreDislikedMoviesThanLikedMovies = () => {
-  let usersWhoDislikeMore = [];
-  // Add your code here
-  const usersPromise = getUsers();
-  const likedMoviesPromise = getLikedMovies();
-  const dislikedMoviesPromise = getDislikedMovies();
-
-  const allPromises = Promise.all([
-    usersPromise,
-    likedMoviesPromise,
-    dislikedMoviesPromise,
-  ]);
-
-  return allPromises
-    .then((values) => {
-      const users = values[0];
-      const likedMovies = values[1];
-      const dislikedMovies = values[2];
-
-      users.forEach((user) => {
+  return Promise.all([
+    getUsers(),
+    getLikedMovies(),
+    getDislikedMovies(),
+  ])
+    .then(([users, likedMovies, dislikedMovies]) => {
+      return users.filter((user) => {
         const userLiked = likedMovies.find((item) => item.userId === user.id);
-        const userDisliked = dislikedMovies.find((item) => item.userId === user.id,);
+        const userDisliked = dislikedMovies.find((item) => item.userId === user.id);
 
         const likedCount = userLiked ? userLiked.movies.length : 0;
         const dislikedCount = userDisliked ? userDisliked.movies.length : 0;
 
-        if (dislikedCount > likedCount) {
-          usersWhoDislikeMore.push(user);
-        }
+        return dislikedCount > likedCount;
       });
-
-      return usersWhoDislikeMore;
     })
     .catch((error) => {
-      console.log(error);
+      console.error(error);
+      throw error;
     });
 };
 
