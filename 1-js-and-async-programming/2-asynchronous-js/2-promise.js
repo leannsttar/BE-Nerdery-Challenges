@@ -12,6 +12,13 @@
 
  */
 
+//I added getUsers() here, cuz i need to get the users data
+const {
+  getLikedMovies,
+  getDislikedMovies,
+  getUsers,
+} = require("./utils/mocked-api");
+
 /**
  * @typedef {Object} User
  * @property {number} id - The unique identifier for the user.
@@ -25,14 +32,36 @@
  * @returns {Promise<User[]>} A promise that resolves to an array of users who dislike more movies than they like.
  */
 const getUsersWithMoreDislikedMoviesThanLikedMovies = () => {
-  // Add your code here
+  return Promise.all([
+    getUsers(),
+    getLikedMovies(),
+    getDislikedMovies(),
+  ])
+    .then(([users, likedMovies, dislikedMovies]) => {
+      return users.filter((user) => {
+        const userLiked = likedMovies.find((item) => item.userId === user.id);
+        const userDisliked = dislikedMovies.find((item) => item.userId === user.id);
 
-  return [];
+        const likedCount = userLiked ? userLiked.movies.length : 0;
+        const dislikedCount = userDisliked ? userDisliked.movies.length : 0;
+
+        return dislikedCount > likedCount;
+      });
+    })
+    .catch((error) => {
+      console.error(error);
+      throw error;
+    });
 };
 
+//added user.age instead of age
 getUsersWithMoreDislikedMoviesThanLikedMovies().then((users) => {
   console.log("Users with more disliked movies than liked movies:");
   users.forEach((user) => {
-    console.log(user, age);
+    console.log(`${user.name} - ${user.age} años`);
   });
 });
+
+module.exports = {
+  getUsersWithMoreDislikedMoviesThanLikedMovies,
+};
