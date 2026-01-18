@@ -30,7 +30,23 @@ Requirements:
 - Only count palindromes with length greater than or equal to the specified minLength.
 - Return the count as a number.
 */
+const isPalindrome = (word) => {
+    const reversed = word.split('').reverse().join('');
+    return word === reversed;
+};
 
-const palindromeCounter = (text, minLength) => {};
+const palindromeCounter = (text, minLength) => {
+    const formattedText = text.toLowerCase()
+    const words = formattedText.split(' ')
+    let count = 0;
+
+    words.forEach((word) => {
+        if (word.length >= minLength && isPalindrome(word)) {
+            count++;
+        }
+    });
+
+    return count;
+};
 
 module.exports = palindromeCounter;
