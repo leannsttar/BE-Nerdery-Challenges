@@ -33,23 +33,18 @@ Requirements:
 
 const factorialChain = (number, lastDigits) => {
 
-    let result
-    let totalSumFactorial = 0
+    let totalSumFactorial = 0;
+    let currentFactorial = 1;
 
     for (let i = 1; i <= number; i++) {
-        let currentFactorial = 1
-        for (let j = 1; j <= i; j++) {
-            currentFactorial*= j
-        }
-        totalSumFactorial+= currentFactorial
-        
+        currentFactorial *= i;
+        totalSumFactorial += currentFactorial;
     }
 
     const totalSumFactorialStr = totalSumFactorial.toString()
-    
+
     if (lastDigits > totalSumFactorialStr.length) {
         result = totalSumFactorialStr.padStart(lastDigits, "0")
-
     } else {
         result = totalSumFactorialStr.slice(-lastDigits)
     }

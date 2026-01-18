@@ -17,7 +17,6 @@ timeDifference(7200, 3400); // Expected output: "01:03:20"
 */
 
 const timeDifference = (a, b) => {
-    if (a === b) return "No difference"
 
     const differenceInSeconds = Math.abs(a - b)
 
