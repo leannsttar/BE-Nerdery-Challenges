@@ -24,7 +24,17 @@ async function saveData(newData) {
   }
 }
 
+async function saveCsv(filePath, csvContent) {
+  try {
+    await fs.writeFile(filePath, csvContent);
+  } catch (error) {
+    console.error("Error writing CSV file:", error);
+    throw error;
+  }
+}
+
 module.exports = {
     fetchData,
-    saveData
+    saveData,
+    saveCsv
 }

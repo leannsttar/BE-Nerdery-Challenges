@@ -70,5 +70,11 @@
     "name": "LesPaul",
     "price": 980,
     "store": "Gibson"
+  },
+  {
+    "id": 13,
+    "name": "Mcbook pro",
+    "price": 1000,
+    "store": "Apple"
   }
 ]
