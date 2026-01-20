@@ -10,7 +10,10 @@
 
 
 -- your query here
-
+    SELECT c.name category, COUNT(fc.film_id) film_count
+    FROM category c
+    INNER JOIN film_category fc USING(category_id)
+    GROUP BY c.name;
 
  /*
     Challenge 2.
@@ -22,7 +25,11 @@
  */
 
  -- your query here
-
+    SELECT c.first_name, c.last_name, SUM(p.amount) total_spent
+    FROM customer c
+    INNER JOIN payment p USING(customer_id)
+    GROUP BY c.first_name, c.last_name
+    ORDER BY total_spent DESC;
 
 
 
@@ -35,10 +42,14 @@
     - Results should only include films that have rental records in this time period
 */
 
-
 -- your query here
+    SELECT DISTINCT f.title
+    FROM film f
+    INNER JOIN inventory i USING(film_id)
+    INNER JOIN rental r USING(inventory_id)
+    WHERE (now() - r.rental_date) > '10 years'::interval;
 
-
+    
 /*
     Challenge 4.
     Write a SQL query that lists all films that have never been rented in the Pagila database.
@@ -49,9 +60,14 @@
 
 
 -- your query here
+    SELECT f.title, i.inventory_id 
+    FROM film f
+    INNER JOIN inventory i USING(film_id)
+    WHERE NOT EXISTS (
+        SELECT 1 FROM rental r WHERE i.inventory_id = r.inventory_id
+    );
 
-
-
+    
 
 /*
     Challenge 5.
