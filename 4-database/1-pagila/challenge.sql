@@ -32,8 +32,6 @@
     ORDER BY total_spent DESC
     LIMIT 5;
 
-
-
 /*
     Challenge 3.
     Write a SQL query that lists all film titles that have been rented in the past 10 years in the Pagila database.
@@ -77,7 +75,6 @@
 
 
 -- your query here
-    --I'll use a CTE later
     SELECT f.title, COUNT(r.rental_id) rental_count
     FROM film f
     INNER JOIN inventory i USING(film_id)
@@ -92,7 +89,21 @@
             GROUP BY i.film_id
         )
     );  
-
+    
+    --PREFERRED SOLUTION
+    WITH film_rental_counts AS (
+        SELECT f.film_id, f.title, COUNT(r.rental_id) rental_count
+        FROM film f
+        INNER JOIN inventory i USING(film_id)
+        INNER JOIN rental r USING(inventory_id)
+        GROUP BY f.film_id
+    ), 
+    average_rentals AS (
+        SELECT AVG(rental_count) as average FROM film_rental_counts
+    )
+    SELECT title, rental_count
+    FROM film_rental_counts
+    WHERE rental_count > (SELECT average FROM average_rentals);
 
 /*
     Challenge 6.
@@ -123,19 +134,7 @@
 
 
 -- your query here
-    -- SELECT c.first_name, c.last_name
-    -- FROM customer c
-    -- LEFT JOIN rental r USING(customer_id)
-    -- LEFT JOIN inventory i USING(inventory_id)
-    -- LEFT JOIN film f USING(film_id)
-    -- LEFT JOIN film_category fc USING(film_id)
-    -- GROUP BY c.customer_id, c.first_name, c.last_name
-    -- HAVING COUNT(DISTINCT fc.category_id) != (
-    --     SELECT COUNT(category_id)
-    --     FROM category
-    -- );
 
-    --different way
     SELECT c.first_name, c.last_name
     FROM customer c
     WHERE (
@@ -147,6 +146,19 @@
         WHERE r.customer_id = c.customer_id
     ) != (SELECT COUNT(category_id) from category);
 
+    --PREFERRED SOLUTION
+    WITH customer_categories AS (
+        SELECT r.customer_id, COUNT(DISTINCT fc.category_id) as categories_count
+        FROM rental r
+        JOIN inventory i USING(inventory_id)
+        JOIN film f USING(film_id)
+        JOIN film_category fc USING(film_id)
+        GROUP BY r.customer_id
+    )
+    SELECT c.first_name, c.last_name
+    FROM customer c
+    INNER JOIN customer_categories cc USING(customer_id) 
+    WHERE cc.categories_count != (SELECT COUNT(category_id) from category);
 
 /*
     Challenge 8.
@@ -169,13 +181,40 @@
     How often should it be refreshed?
 */
 
---Answer 1: I would prefer it in systems where read performance is critical and the underlying data does not change frequently. It is especially useful when the query involves complex calculations or multiple joins (like this one with 6 tables) that would be too expensive to do in real-time every time the view is accessed
+--Answer 1: I would prefer it in systems where read performance is critical and the underlying data does not change frequently. It is  especially useful when the query involves complex calculations or multiple joins (like this one with 6 tables) that would be too expensive to do in real-time every time the view is accessed
 --Answer 2: It would depend on the use case, the data change rate, and resource availability. For example, for a management report, a daily refresh during off-peak hours might be enough, but for a sales dashboard, you might need to refresh it every few hours to keep the information useful without slowing down the db
 
 -- your work here
 
+    --PREFERRED SOLUTION
+    CREATE MATERIALIZED VIEW revenue_by_category
+    AS
+    WITH metrics AS (
+        SELECT fc.category_id, SUM(p.amount) as revenue
+        FROM payment p
+        INNER JOIN rental r USING(rental_id)
+        INNER JOIN inventory i USING(inventory_id)
+        INNER JOIN film f USING(film_id)
+        INNER JOIN film_category fc USING(film_id)
+        GROUP BY fc.category_id
+    )
+    SELECT c.name, COALESCE(metrics.revenue, 0) as total_revenue
+    FROM category c
+    LEFT JOIN metrics USING(category_id)
+    ORDER BY total_revenue DESC;
 
-   CREATE MATERIALIZED VIEW revenue_by_category
+    --All the categories 
+    SELECT * FROM revenue_by_category;
+
+    --Top 3 
+    SELECT * FROM revenue_by_category LIMIT 3;
+
+    --Refreshing manually
+    REFRESH MATERIALIZED VIEW revenue_by_category;
+
+
+    --using subqueries
+    CREATE MATERIALIZED VIEW revenue_by_category
     AS
     SELECT c.name, COALESCE(metrics.revenue, 0) as total_revenue
     FROM category c
@@ -190,14 +229,3 @@
     ) as metrics
     ON c.category_id = metrics.category_id
     ORDER BY total_revenue DESC;
-
-    --All the categories and revenue
-    SELECT * FROM revenue_by_category;
-
-    --Top 3 categories
-    SELECT * FROM revenue_by_category LIMIT 3;
-
-    --Refreshing manually
-    REFRESH MATERIALIZED VIEW revenue_by_category;
-
-

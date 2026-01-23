@@ -42,66 +42,66 @@
 
     -- your solution here
 
-    create or replace function banking.transfer_funds(from_id int, to_id int, amount numeric)
-    returns uuid
-    as
+    CREATE OR REPLACE FUNCTION banking.transfer_funds(from_id int, to_id int, amount numeric)
+    RETURNS uuid
+    AS
     $$
-    declare linked_reference uuid;
+    DECLARE linked_reference uuid;
             sender_status text;
             receiver_status text;
             sender_balance numeric;
-    begin
-        select gen_random_uuid() into linked_reference;
+    BEGIN
+        SELECT gen_random_uuid() INTO linked_reference;
 
         --Basic validations
-        if from_id = to_id then
-            raise exception 'Cannot transfer to the same account';
-        end if;
+        IF from_id = to_id THEN
+            RAISE EXCEPTION 'Cannot transfer to the same account';
+        END IF;
 
-        if amount <= 0 then
-            raise exception 'Transfer amount must be positive';
-        end if;
+        IF amount <= 0 THEN
+            RAISE EXCEPTION 'Transfer amount must be positive';
+        END IF;
 
         --Fetching the sender, locking the row and validating
-        select status, balance into sender_status, sender_balance
-        from banking.accounts where account_id = from_id for update;
+        SELECT status, balance INTO sender_status, sender_balance
+        FROM banking.accounts WHERE account_id = from_id FOR UPDATE;
 
-        if not found then
-            raise exception 'Sender account % does not exist', from_id;
-        end if;
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Sender account % does not exist', from_id;
+        END IF;
 
-        if sender_status = 'frozen' then
-            raise exception 'Sender account % is frozen', from_id;
-        end if;
+        IF sender_status = 'frozen' THEN
+            RAISE EXCEPTION 'Sender account % is frozen', from_id;
+        END IF;
 
-        if sender_balance < amount then
-            raise exception 'Insufficient funds';
-        end if;
+        IF sender_balance < amount THEN
+            RAISE EXCEPTION 'Insufficient funds';
+        END IF;
 
         --Fetching the receiver, locking the row and validating
-        select status into receiver_status
-        from banking.accounts where account_id = to_id for update;
+        SELECT STATUS INTO receiver_status
+        FROM banking.accounts WHERE account_id = to_id FOR UPDATE;
 
-        if not found then
-            raise exception 'Receiver account % doesnt exist', to_id;
-        end if;
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Receiver account % doesnt exist', to_id;
+        END IF;
 
-        if receiver_status = 'frozen' then
-            raise exception 'Receiver account % is frozen', to_id;
-        end if;
+        IF receiver_status = 'frozen' THEN
+            RAISE EXCEPTION 'Receiver account % is frozen', to_id;
+        END IF;
 
         --Debit the sender and credit the recipient
-        update banking.accounts set balance = balance + amount where account_id = to_id;
-        update banking.accounts set balance = balance - amount where account_id = from_id;
+        UPDATE banking.accounts SET balance = balance + amount WHERE account_id = to_id;
+        UPDATE banking.accounts SET balance = balance - amount WHERE account_id = from_id;
 
         --log in banking.transactions
-        insert into banking.transactions (account_id, amount, transaction_type, reference, transaction_date) values 
+        INSERT INTO banking.transactions (account_id, amount, transaction_type, reference, transaction_date) VALUES 
         (from_id, amount, 'withdrawal', linked_reference, now()),
         (to_id, amount, 'deposit', linked_reference, now());
 
-        return linked_reference;
-    end;
+        RETURN linked_reference;
+    END;
     $$
-    language plpgsql;
+    LANGUAGE PLPGSQL;
 
     SELECT banking.transfer_funds(1, 2, 100);
