@@ -28,8 +28,9 @@
     SELECT c.first_name, c.last_name, SUM(p.amount) total_spent
     FROM customer c
     INNER JOIN payment p USING(customer_id)
-    GROUP BY c.first_name, c.last_name
-    ORDER BY total_spent DESC;
+    GROUP BY c.customer_id, c.first_name, c.last_name
+    ORDER BY total_spent DESC
+    LIMIT 5;
 
 
 
@@ -47,7 +48,7 @@
     FROM film f
     INNER JOIN inventory i USING(film_id)
     INNER JOIN rental r USING(inventory_id)
-    WHERE (now() - r.rental_date) > '10 years'::interval;
+    WHERE AGE(r.rental_date) < '10 years'::interval;
 
     
 /*
@@ -58,7 +59,6 @@
     - inventory_id should show the inventory ID of the specific copy
 */
 
-
 -- your query here
     SELECT f.title, i.inventory_id 
     FROM film f
@@ -66,8 +66,6 @@
     WHERE NOT EXISTS (
         SELECT 1 FROM rental r WHERE i.inventory_id = r.inventory_id
     );
-
-    
 
 /*
     Challenge 5.
@@ -78,8 +76,23 @@
 */
 
 
-
 -- your query here
+    --I'll use a CTE later
+    SELECT f.title, COUNT(r.rental_id) rental_count
+    FROM film f
+    INNER JOIN inventory i USING(film_id)
+    INNER JOIN rental r USING(inventory_id)
+    GROUP BY f.film_id, f.title
+    HAVING COUNT(f.film_id) > (
+        SELECT AVG(counts)
+        FROM (
+            SELECT COUNT(r.rental_id) as counts
+            FROM inventory i
+            INNER JOIN rental r USING (inventory_id)
+            GROUP BY i.film_id
+        )
+    );  
+
 
 /*
     Challenge 6.
@@ -93,6 +106,14 @@
 
 -- your query here
 
+    SELECT c.first_name, c.last_name, MIN(r.rental_date) AS first_rental, MAX(r.rental_date) AS last_rental, 
+    (EXTRACT(EPOCH FROM (MAX(r.rental_date) - MIN(r.rental_date))) / 86400)::int AS rental_span_days
+    FROM customer c
+    LEFT JOIN rental r USING(customer_id)
+    GROUP BY c.customer_id, c.first_name, c.last_name
+    ORDER BY rental_span_days DESC;
+
+
 /*
     Challenge 7.
     Find all customers who have not rented movies from every available genre.
@@ -102,6 +123,29 @@
 
 
 -- your query here
+    -- SELECT c.first_name, c.last_name
+    -- FROM customer c
+    -- LEFT JOIN rental r USING(customer_id)
+    -- LEFT JOIN inventory i USING(inventory_id)
+    -- LEFT JOIN film f USING(film_id)
+    -- LEFT JOIN film_category fc USING(film_id)
+    -- GROUP BY c.customer_id, c.first_name, c.last_name
+    -- HAVING COUNT(DISTINCT fc.category_id) != (
+    --     SELECT COUNT(category_id)
+    --     FROM category
+    -- );
+
+    --different way
+    SELECT c.first_name, c.last_name
+    FROM customer c
+    WHERE (
+        SELECT COUNT(DISTINCT fc.category_id)
+        FROM rental r
+        JOIN inventory i USING(inventory_id)
+        JOIN film f USING(film_id)
+        JOIN film_category fc USING(film_id)
+        WHERE r.customer_id = c.customer_id
+    ) != (SELECT COUNT(category_id) from category);
 
 
 /*
@@ -125,8 +169,35 @@
     How often should it be refreshed?
 */
 
+--Answer 1: I would prefer it in systems where read performance is critical and the underlying data does not change frequently. It is especially useful when the query involves complex calculations or multiple joins (like this one with 6 tables) that would be too expensive to do in real-time every time the view is accessed
+--Answer 2: It would depend on the use case, the data change rate, and resource availability. For example, for a management report, a daily refresh during off-peak hours might be enough, but for a sales dashboard, you might need to refresh it every few hours to keep the information useful without slowing down the db
+
 -- your work here
 
 
+   CREATE MATERIALIZED VIEW revenue_by_category
+    AS
+    SELECT c.name, COALESCE(metrics.revenue, 0) as total_revenue
+    FROM category c
+    LEFT JOIN (
+        SELECT fc.category_id, SUM(p.amount) as revenue
+        FROM payment p
+        INNER JOIN rental r USING(rental_id)
+        INNER JOIN inventory i USING(inventory_id)
+        INNER JOIN film f USING(film_id)
+        INNER JOIN film_category fc USING(film_id)
+        GROUP BY fc.category_id
+    ) as metrics
+    ON c.category_id = metrics.category_id
+    ORDER BY total_revenue DESC;
+
+    --All the categories and revenue
+    SELECT * FROM revenue_by_category;
+
+    --Top 3 categories
+    SELECT * FROM revenue_by_category LIMIT 3;
+
+    --Refreshing manually
+    REFRESH MATERIALIZED VIEW revenue_by_category;
 
 
