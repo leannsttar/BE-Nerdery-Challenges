@@ -85,7 +85,7 @@ type B = If<false, 'Apple', 'Orange'>;
 
 // Add here your example
 
-type MyReadOnly<T> = {
+type ReadOnly<T> = {
     readonly [P in keyof T]: T[P]
 }
 
@@ -94,7 +94,7 @@ interface Computer {
     serialNumber: number
 }
 
-const computer: MyReadOnly<Computer> = {
+const computer: ReadOnly<Computer> = {
     processor: "i5",
     serialNumber: 440
 }
@@ -148,10 +148,11 @@ type a = MyReturnType<typeof myFunction>
  */
 
 // Add here your solution
-type MyAwaited<T> = T extends Promise<infer U> ? U : never
+type MyAwaited<T> =
+  T extends Promise<infer U> ? MyAwaited<U> : T;
 // Add here your example
 
-type ExampleType = Promise<boolean>;
+type ExampleType = Promise<Promise<boolean>>;
 type Result = MyAwaited<ExampleType>;
 
 
@@ -184,7 +185,7 @@ type Result = MyAwaited<ExampleType>;
 
 
 //My last solution
-type MyRequiredByKeys<T, K extends keyof T> = Required<Pick<T, K>> & Omit<T, K>
+type RequiredByKeys<T, K extends keyof T = keyof T> = Required<Pick<T, K>> & Omit<T, K>;
 
 // Add here your example
  interface User {
@@ -192,4 +193,5 @@ type MyRequiredByKeys<T, K extends keyof T> = Required<Pick<T, K>> & Omit<T, K>
    age?: number;
    address?: string;
  }
- type UserRequiredName = MyRequiredByKeys<User, 'name' | 'address'>;
+ type UserRequiredName = RequiredByKeys<User, 'name' | 'address'>;
+ type EverythingRequired = RequiredByKeys<User>;

@@ -19,10 +19,10 @@ interface DepartmentAndProductsResult extends Pick<Department, 'id' | 'name'> {
   productsNames: string[];
 }
 
-async function getDepartmentsWithProductCount(
+function getDepartmentsWithProductCount(
   departments: Department[],
   products: Product[],
-): Promise<DepartmentAndProductsResult[]> {
+): DepartmentAndProductsResult[] {
 
   const departmentWithProducts = new Map<number, string[]>()
 

@@ -31,9 +31,11 @@ interface ProductAnalysis {
   averageDiscount: number;
 }
 
-async function analyzeProductPrices(
-  products: Product[],
-): Promise<ProductAnalysis> {
+function analyzeProductPrices(products: Product[]): ProductAnalysis {
+  if (products.length === 0) {
+    throw new Error("Cannot analyze product prices: no products provided");
+  }
+
   const data = products.reduce(
     (acc, product) => {
       acc.totalPrice += product.price;
@@ -51,7 +53,8 @@ async function analyzeProductPrices(
       }
 
       if (product.salePrice && product.salePrice < product.price) {
-        const discount = ((product.price - product.salePrice) / product.price) * 100;
+        const discount =
+          ((product.price - product.salePrice) / product.price) * 100;
 
         acc.totalDiscount += discount;
         acc.productsWithDiscountPrice++;
@@ -69,15 +72,18 @@ async function analyzeProductPrices(
     },
   );
 
+  const averageDiscount =
+    data.productsWithDiscountPrice > 0
+      ? Number((data.totalDiscount / data.productsWithDiscountPrice).toFixed(2))
+      : 0;
+
   return {
     totalPrice: data.totalPrice,
     averagePrice: Number((data.totalPrice / products.length).toFixed(2)),
     mostExpensiveProduct: data.mostExpensiveProduct,
     cheapestProduct: data.cheapestProduct,
     onSaleCount: data.onSaleCount,
-    averageDiscount: Number(
-      (data.totalDiscount / data.productsWithDiscountPrice).toFixed(2),
-    ),
+    averageDiscount,
   };
 }
 
@@ -95,7 +101,7 @@ async function runChallenge1() {
   );
 }
 //RUN THIS IF U WANNA CHECK THE RESULT
-//runChallenge1().catch(console.error);
+runChallenge1().catch(console.error);
 
 /**
  *  Challenge 2: Build a Product Catalog with Brand Metadata
@@ -117,22 +123,22 @@ interface EnrichedProduct extends Product {
   brandInfo: BrandInfo;
 }
 
-async function buildProductCatalog(
+function buildProductCatalog(
   products: Product[],
   brands: Brand[],
-): Promise<EnrichedProduct[]> {
-  const activeBrands = new Map<string | number, Brand>();
+): EnrichedProduct[] {
+  const activeBrands = new Map<string, Brand>();
 
   for (const brand of brands) {
     if (brand.isActive) {
-      activeBrands.set(brand.id, brand);
+      activeBrands.set(String(brand.id), brand);
     }
   }
 
   const enriched: EnrichedProduct[] = [];
 
   for (const product of products) {
-    const brand = activeBrands.get(product.brandId);
+    const brand = activeBrands.get(String(product.brandId));
     if (brand && product.isActive) {
       const { id, isActive, ...remainingData } = brand;
       enriched.push({ ...product, brandInfo: remainingData });
@@ -166,9 +172,7 @@ async function runChallenge2() {
  * - Use proper TypeScript typing for parameters and return values.
  */
 
-async function filterProductsWithOneImage(
-  products: Product[],
-): Promise<Product[]> {
+function filterProductsWithOneImage(products: Product[]): Product[] {
   // Implement the function logic here
 
   const result: Product[] = [];
@@ -178,7 +182,7 @@ async function filterProductsWithOneImage(
       const productCopy = { ...product, images: [product.images[0]] };
       result.push(productCopy);
     }
-  };
+  }
 
   return result;
 }
@@ -190,4 +194,4 @@ async function runChallenge3() {
   console.dir(result, { depth: null });
 }
 
-runChallenge3().catch(console.error);
+//runChallenge3().catch(console.error);

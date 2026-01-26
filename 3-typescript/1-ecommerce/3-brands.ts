@@ -17,10 +17,10 @@ import { fetchData } from "./utils/fetch-data";
 
 type CountryProductsResult = Record<string, number>;
 
-async function getCountriesWithBrandsAndProductCount(
+function getCountriesWithBrandsAndProductCount(
   brands: Brand[],
   products: Product[],
-): Promise<CountryProductsResult> {
+): CountryProductsResult {
   const brandsWithCountry = new Map<string | number, string>();
   const countryWithProducts = new Map<string, number>();
 
