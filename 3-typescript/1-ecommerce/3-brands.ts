@@ -12,10 +12,50 @@
  * - The return should be a type that allow us to define the country name as a key and the amount of products as a value.
  */
 
-async function getCountriesWithBrandsAndProductCount(
-  brands: unknown[],
-  products: unknown[],
-): Promise<unknown> {
-  // Implement the function logic here
-  return;
+import { Product, Brand } from "./1-types";
+import { fetchData } from "./utils/fetch-data";
+
+type CountryProductsResult = Record<string, number>;
+
+function getCountriesWithBrandsAndProductCount(
+  brands: Brand[],
+  products: Product[],
+): CountryProductsResult {
+  const brandsWithCountry = new Map<string | number, string>();
+  const countryWithProducts = new Map<string, number>();
+
+  for (const brand of brands) {
+    const partsOfLocation = brand.headquarters.split(",");
+    
+    if (partsOfLocation.length >= 2) {
+      const country = partsOfLocation[1].trim();
+      brandsWithCountry.set(brand.id, country);
+
+      if (!countryWithProducts.has(country)) {
+        countryWithProducts.set(country, 0);
+      }
+    }
+  }
+
+  for (const product of products) {
+    const country = brandsWithCountry.get(product.brandId);
+    if (country) {
+      countryWithProducts.set(
+        country,
+        (countryWithProducts.get(country) || 0) + 1,
+      );
+    }
+  }
+
+  return Object.fromEntries(countryWithProducts);
 }
+
+async function runChallenge() {
+  const products: Product[] = await fetchData<Product>("products.json");
+  const brands: Brand[] = await fetchData<Brand>("brands.json");
+  const result = await getCountriesWithBrandsAndProductCount(brands, products);
+
+  console.log(result);
+}
+
+runChallenge().catch(console.error);
