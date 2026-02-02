@@ -10,7 +10,10 @@
 
 
 -- your query here
-
+    SELECT c.name category, COUNT(fc.film_id) film_count
+    FROM category c
+    INNER JOIN film_category fc USING(category_id)
+    GROUP BY c.name;
 
  /*
     Challenge 2.
@@ -22,9 +25,12 @@
  */
 
  -- your query here
-
-
-
+    SELECT c.first_name, c.last_name, SUM(p.amount) total_spent
+    FROM customer c
+    INNER JOIN payment p USING(customer_id)
+    GROUP BY c.customer_id, c.first_name, c.last_name
+    ORDER BY total_spent DESC
+    LIMIT 5;
 
 /*
     Challenge 3.
@@ -35,10 +41,14 @@
     - Results should only include films that have rental records in this time period
 */
 
-
 -- your query here
+    SELECT DISTINCT f.title
+    FROM film f
+    INNER JOIN inventory i USING(film_id)
+    INNER JOIN rental r USING(inventory_id)
+    WHERE AGE(r.rental_date) < '10 years'::interval;
 
-
+    
 /*
     Challenge 4.
     Write a SQL query that lists all films that have never been rented in the Pagila database.
@@ -47,11 +57,12 @@
     - inventory_id should show the inventory ID of the specific copy
 */
 
-
 -- your query here
-
-
-
+    SELECT f.title, i.inventory_id
+    FROM film f
+    INNER JOIN inventory i USING(film_id)
+    LEFT JOIN rental r ON i.inventory_id = r.inventory_id
+    WHERE r.rental_id IS NULL;
 
 /*
     Challenge 5.
@@ -62,8 +73,36 @@
 */
 
 
-
 -- your query here
+    SELECT f.title, COUNT(r.rental_id) rental_count
+    FROM film f
+    INNER JOIN inventory i USING(film_id)
+    INNER JOIN rental r USING(inventory_id)
+    GROUP BY f.film_id, f.title
+    HAVING COUNT(f.film_id) > (
+        SELECT AVG(counts)
+        FROM (
+            SELECT COUNT(r.rental_id) as counts
+            FROM inventory i
+            INNER JOIN rental r USING (inventory_id)
+            GROUP BY i.film_id
+        )
+    );  
+    
+    --PREFERRED SOLUTION
+    WITH film_rental_counts AS (
+        SELECT f.film_id, f.title, COUNT(r.rental_id) rental_count
+        FROM film f
+        INNER JOIN inventory i USING(film_id)
+        INNER JOIN rental r USING(inventory_id)
+        GROUP BY f.film_id
+    ), 
+    average_rentals AS (
+        SELECT AVG(rental_count) as average FROM film_rental_counts
+    )
+    SELECT title, rental_count
+    FROM film_rental_counts
+    WHERE rental_count > (SELECT average FROM average_rentals);
 
 /*
     Challenge 6.
@@ -76,6 +115,17 @@
 */
 
 -- your query here
+    SELECT 
+        c.first_name, 
+        c.last_name, 
+        MIN(r.rental_date) AS first_rental, 
+        MAX(r.rental_date) AS last_rental,
+        COALESCE(MAX(r.rental_date)::date - MIN(r.rental_date)::date, 0) AS rental_span_days
+    FROM customer c
+    LEFT JOIN rental r USING(customer_id)
+    GROUP BY c.customer_id, c.first_name, c.last_name
+    ORDER BY rental_span_days DESC;
+
 
 /*
     Challenge 7.
@@ -87,6 +137,30 @@
 
 -- your query here
 
+    SELECT c.first_name, c.last_name
+    FROM customer c
+    WHERE (
+        SELECT COUNT(DISTINCT fc.category_id)
+        FROM rental r
+        JOIN inventory i USING(inventory_id)
+        JOIN film f USING(film_id)
+        JOIN film_category fc USING(film_id)
+        WHERE r.customer_id = c.customer_id
+    ) != (SELECT COUNT(category_id) from category);
+
+    --PREFERRED SOLUTION
+    WITH customer_categories AS (
+        SELECT r.customer_id, COUNT(DISTINCT fc.category_id) as categories_count
+        FROM rental r
+        JOIN inventory i USING(inventory_id)
+        JOIN film f USING(film_id)
+        JOIN film_category fc USING(film_id)
+        GROUP BY r.customer_id
+    )
+    SELECT c.first_name, c.last_name
+    FROM customer c
+    INNER JOIN customer_categories cc USING(customer_id) 
+    WHERE cc.categories_count != (SELECT COUNT(category_id) from category);
 
 /*
     Challenge 8.
@@ -109,8 +183,51 @@
     How often should it be refreshed?
 */
 
+--Answer 1: I would prefer it in systems where read performance is critical and the underlying data does not change frequently. It is  especially useful when the query involves complex calculations or multiple joins (like this one with 6 tables) that would be too expensive to do in real-time every time the view is accessed
+--Answer 2: It would depend on the use case, the data change rate, and resource availability. For example, for a management report, a daily refresh during off-peak hours might be enough, but for a sales dashboard, you might need to refresh it every few hours to keep the information useful without slowing down the db
+
 -- your work here
 
+    --PREFERRED SOLUTION
+    CREATE MATERIALIZED VIEW revenue_by_category
+    AS
+    WITH metrics AS (
+        SELECT fc.category_id, SUM(p.amount) as revenue
+        FROM payment p
+        INNER JOIN rental r USING(rental_id)
+        INNER JOIN inventory i USING(inventory_id)
+        INNER JOIN film f USING(film_id)
+        INNER JOIN film_category fc USING(film_id)
+        GROUP BY fc.category_id
+    )
+    SELECT c.name, COALESCE(metrics.revenue, 0) as total_revenue
+    FROM category c
+    LEFT JOIN metrics USING(category_id)
+    ORDER BY total_revenue DESC;
+
+    --All the categories 
+    SELECT * FROM revenue_by_category;
+
+    --Top 3 
+    SELECT * FROM revenue_by_category LIMIT 3;
+
+    --Refreshing manually
+    REFRESH MATERIALIZED VIEW revenue_by_category;
 
 
-
+    --using subqueries
+    CREATE MATERIALIZED VIEW revenue_by_category
+    AS
+    SELECT c.name, COALESCE(metrics.revenue, 0) as total_revenue
+    FROM category c
+    LEFT JOIN (
+        SELECT fc.category_id, SUM(p.amount) as revenue
+        FROM payment p
+        INNER JOIN rental r USING(rental_id)
+        INNER JOIN inventory i USING(inventory_id)
+        INNER JOIN film f USING(film_id)
+        INNER JOIN film_category fc USING(film_id)
+        GROUP BY fc.category_id
+    ) as metrics
+    ON c.category_id = metrics.category_id
+    ORDER BY total_revenue DESC;
