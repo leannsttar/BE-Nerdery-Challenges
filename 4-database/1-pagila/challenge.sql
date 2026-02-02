@@ -58,12 +58,11 @@
 */
 
 -- your query here
-    SELECT f.title, i.inventory_id 
+    SELECT f.title, i.inventory_id
     FROM film f
     INNER JOIN inventory i USING(film_id)
-    WHERE NOT EXISTS (
-        SELECT 1 FROM rental r WHERE i.inventory_id = r.inventory_id
-    );
+    LEFT JOIN rental r ON i.inventory_id = r.inventory_id
+    WHERE r.rental_id IS NULL;
 
 /*
     Challenge 5.
@@ -116,9 +115,12 @@
 */
 
 -- your query here
-
-    SELECT c.first_name, c.last_name, MIN(r.rental_date) AS first_rental, MAX(r.rental_date) AS last_rental, 
-    (EXTRACT(EPOCH FROM (MAX(r.rental_date) - MIN(r.rental_date))) / 86400)::int AS rental_span_days
+    SELECT 
+        c.first_name, 
+        c.last_name, 
+        MIN(r.rental_date) AS first_rental, 
+        MAX(r.rental_date) AS last_rental,
+        COALESCE(MAX(r.rental_date)::date - MIN(r.rental_date)::date, 0) AS rental_span_days
     FROM customer c
     LEFT JOIN rental r USING(customer_id)
     GROUP BY c.customer_id, c.first_name, c.last_name
